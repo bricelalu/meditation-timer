@@ -2,14 +2,7 @@ import React, { Component } from 'react';
 import { AppRegistry, Text, View, Alert, Button, StyleSheet,
 TouchableOpacity } from 'react-native';
 import Video from 'react-native-video';
-
-const onButtonPress = () => {
-  Alert.alert('Button has been pressed!');
-};
-
-const onButtonPressGong = () => {
-  Alert.alert('Button has been pressed!');
-};
+import renderIf from './src/utils/renderIf';
 
 class Greeting extends Component {
   render() {
@@ -20,8 +13,38 @@ class Greeting extends Component {
 }
 
 class HelloWorldApp extends Component {
-  onPressLearnMore() {
-      console.log('learnMOre');
+  constructor(props) {
+    super(props);
+    this.onButtonPress = this.onButtonPress.bind(this);
+    this.onPlayGongButtonPressed = this.onPlayGongButtonPressed.bind(this);
+    this.state = {
+      isFirstButtonPressed: false,
+      isPlayGongButtonPressed: false,
+    };
+  }
+  onButtonPress() {
+    if (this.state.isFirstButtonPressed) {
+      this.setState({ isFirstButtonPressed: false });
+    } else {
+      this.setState({ isFirstButtonPressed: true });
+    }
+
+    Alert.alert('Button has been pressed!');
+  }
+  onPlayGongButtonPressed() {
+    if (this.state.isPlayGongButtonPressed) {
+      this.setState({ isPlayGongButtonPressed: true });
+    } else {
+      this.setState({ isPlayGongButtonPressed: true });
+      return (
+        <Video
+        source={require('./src/components/gong.mp3')}
+        repeat={false}
+        />
+      );
+    }
+
+    Alert.alert('You should hear the gong!');
   }
   render() {
     return (
@@ -30,18 +53,19 @@ class HelloWorldApp extends Component {
         <Greeting name='Jaina' />
         <Greeting name='Valeera' />
           <Button
-    onPress={onButtonPress}
+    onPress={this.onButtonPress}
     title="Learn More"
     color="#841584"
     accessibilityLabel="Learn more about this purple button"
           />
-          <Button
-    onPress={onButtonPressGong}
-    title="Play GONG"
-    color="#841584"
-    accessibilityLabel="Learn more about this purple button"
-          />
-
+        {renderIf(this.state.isFirstButtonPressed,
+            <Button
+      onPress={this.onPlayGongButtonPressed}
+      title="Play GONG"
+      color="#841584"
+      accessibilityLabel="Learn more about this purple button"
+            />
+        )}
     </View>
     );
   }
@@ -257,4 +281,4 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('medit', () => VideoPlayer);
+AppRegistry.registerComponent('medit', () => HelloWorldApp);
