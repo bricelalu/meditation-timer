@@ -9,6 +9,7 @@
   "dependencies": {
     "react": "16.0.0-alpha.6",
     "react-native": "*",
+    "react-native-sound": "^0.10.1",
     "react-native-video": "^1.0.0"
   },
   "devDependencies": {
