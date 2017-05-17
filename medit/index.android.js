@@ -12,6 +12,7 @@ import Video from 'react-native-video';
 import renderIf from './src/utils/renderIf';
 
 const Sound = require('react-native-sound');
+const Timer = require('react-native-timer');
 
 const gongSound = new Sound('gong.mp3', Sound.MAIN_BUNDLE, (error) => {
   if (error) {
@@ -19,7 +20,7 @@ const gongSound = new Sound('gong.mp3', Sound.MAIN_BUNDLE, (error) => {
     return;
   }
   // loaded successfully
-  console.log('duration in seconds: ' + whoosh.getDuration() + 'number of channels: ' + whoosh.getNumberOfChannels());
+  console.log('duration in seconds: ' + gongSound.getDuration() + 'number of channels: ' + gongSound.getNumberOfChannels());
 });
 
 class Greeting extends Component {
@@ -33,10 +34,14 @@ class Greeting extends Component {
 class HelloWorldApp extends Component {
   constructor(props) {
     super(props);
+this.onMeditationIntervalEnd = this.onMeditationIntervalEnd.bind(this);
+this.onMeditationEnd = this.onMeditationEnd.bind(this);
+this.onMeditStart = this.onMeditStart.bind(this);
     this.onButtonPress = this.onButtonPress.bind(this);
     this.onPlayGongButtonPressed = this.onPlayGongButtonPressed.bind(this);
     this.getDurationTitle = this.getDurationTitle.bind(this);
     this.state = {
+      isMeditating: false,
       isFirstButtonPressed: false,
       isPlayGongButtonPressed: false,
       presetHour: 0,
@@ -47,8 +52,32 @@ class HelloWorldApp extends Component {
   onMeditLengthChoose() {
     Alert.alert('MeditLengthChoose');
   }
+  onMeditationIntervalEnd() {
+    if (!this.state.isMeditating) {
+      Timer.clearInterval(this, 'endIntervalWithOneGong');
+    }
+    gongSound.play();
+  }
+  onMeditationEnd() {
+    gongSound.setNumberOfLoops(0);
+    gongSound.play((success) => {
+      gongSound.play((success) => {
+        gongSound.play((success) => {
+          gongSound.stop();
+          gongSound.release();
+          Alert.alert('MeditEnd');
+          Timer.clearTimeout(this);
+        });
+      });
+    });
+    this.setState({ isMeditating: false });
+  }
   onMeditStart() {
-    Alert.alert('MeditStart');
+    gongSound.play();
+    this.setState({ isMeditating: true }, () => Timer.setTimeout(
+      this, 'endMeditationWithMultipleGongs', this.onMeditationEnd, 15000
+    ));
+    Timer.setInterval(this, 'endIntervalWithOneGong', this.onMeditationIntervalEnd, 5000);
   }
   onButtonPress() {
     if (this.state.isFirstButtonPressed) {
@@ -56,6 +85,7 @@ class HelloWorldApp extends Component {
     } else {
       this.setState({ isFirstButtonPressed: true });
     }
+
     gongSound.play((success) => {
       if (success) {
         console.log('successfully finished playing');
