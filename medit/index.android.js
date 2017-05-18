@@ -5,16 +5,15 @@ import {
   Text,
   View,
   Alert,
-  Button,
-  StyleSheet,
-  TouchableOpacity } from 'react-native';
-import Video from 'react-native-video';
-import renderIf from './src/utils/renderIf';
+  Button } from 'react-native';
+import NumberPickerDialog from 'react-native-numberpicker-dialog';
+import Header from './src/components/header';
 
 const Sound = require('react-native-sound');
 const Timer = require('react-native-timer');
 
-const gongSound = new Sound('gong.mp3', Sound.MAIN_BUNDLE, (error) => {
+const preparationTimeInSecond = 5;
+const gongSound = new Sound('chime.mp3', Sound.MAIN_BUNDLE, (error) => {
   if (error) {
     console.log('failed to load the sound', error);
     return;
@@ -23,41 +22,46 @@ const gongSound = new Sound('gong.mp3', Sound.MAIN_BUNDLE, (error) => {
   console.log('duration in seconds: ' + gongSound.getDuration() + 'number of channels: ' + gongSound.getNumberOfChannels());
 });
 
-class Greeting extends Component {
-  render() {
-    return (
-      <Text>Hello {this.props.name}!</Text>
-    );
-  }
-}
+let minutes = 5;
+let intervalDurationMinute = 1;
 
 class HelloWorldApp extends Component {
   constructor(props) {
     super(props);
-this.onMeditationIntervalEnd = this.onMeditationIntervalEnd.bind(this);
-this.onMeditationEnd = this.onMeditationEnd.bind(this);
-this.onMeditStart = this.onMeditStart.bind(this);
-    this.onButtonPress = this.onButtonPress.bind(this);
-    this.onPlayGongButtonPressed = this.onPlayGongButtonPressed.bind(this);
+    this.onMeditationIntervalEnd = this.onMeditationIntervalEnd.bind(this);
+    this.onPreparationEnd = this.onPreparationEnd.bind(this);
+    this.onMeditationEnd = this.onMeditationEnd.bind(this);
+    this.onMeditStart = this.onMeditStart.bind(this);
+    this.onButtonPress2 = this.onButtonPress2.bind(this);
+    this.onIntervalChange = this.onIntervalChange.bind(this);
     this.getDurationTitle = this.getDurationTitle.bind(this);
     this.state = {
       isMeditating: false,
       isFirstButtonPressed: false,
       isPlayGongButtonPressed: false,
       presetHour: 0,
-      presetMinute: 5,
+      presetMinute: minutes,
+      intervalMinute: intervalDurationMinute,
       totalDurationMinute: 5
     };
+    const timeValues = [];
+    for (let i = 0; i < 60; i++) {
+      timeValues.push(i);
+    }
+    this.state.timeValues = timeValues;
   }
+
   onMeditLengthChoose() {
     Alert.alert('MeditLengthChoose');
   }
+
   onMeditationIntervalEnd() {
     if (!this.state.isMeditating) {
       Timer.clearInterval(this, 'endIntervalWithOneGong');
     }
     gongSound.play();
   }
+
   onMeditationEnd() {
     gongSound.setNumberOfLoops(0);
     gongSound.play((success) => {
@@ -72,44 +76,74 @@ this.onMeditStart = this.onMeditStart.bind(this);
     });
     this.setState({ isMeditating: false });
   }
-  onMeditStart() {
+  onPreparationEnd() {
     gongSound.play();
+    Timer.setTimeout(
+      this,
+      'endMeditationWithMultipleGongs',
+      this.onMeditationEnd,
+      minutes * 60 * 1000
+    );
+  }
+  onMeditStart() {
     this.setState({ isMeditating: true }, () => Timer.setTimeout(
-      this, 'endMeditationWithMultipleGongs', this.onMeditationEnd, 15000
-    ));
-    Timer.setInterval(this, 'endIntervalWithOneGong', this.onMeditationIntervalEnd, 5000);
-  }
-  onButtonPress() {
-    if (this.state.isFirstButtonPressed) {
-      this.setState({ isFirstButtonPressed: false });
-    } else {
-      this.setState({ isFirstButtonPressed: true });
-    }
+      this,
+      'startMeditationPreparation',
+      this.onPreparationEnd,
+      // preparation time
+      preparationTimeInSecond * 1000)
+    );
 
-    gongSound.play((success) => {
-      if (success) {
-        console.log('successfully finished playing');
-      } else {
-        console.log('playback failed due to audio decoding errors');
+    Timer.setInterval(
+      this,
+      'endIntervalWithOneGong',
+      this.onMeditationIntervalEnd,
+      intervalDurationMinute * 60 * 1000
+    );
+  }
+
+  onButtonPress2() {
+    const timeValues = [];
+    for (let i = 0; i < 60; i++) {
+      timeValues.push(i.toString());
+    }
+    NumberPickerDialog.show({
+      values: timeValues,
+      positiveButtonLabel: 'Ok',
+      negativeButtonLabel: 'Cancel',
+      value: minutes.toString(),
+      message: 'Durée de la séance',
+      title: 'Combien de temps (minutes) allez vous pratiquer ?',
+    }).then((id) => {
+      if (id !== -1) {
+        minutes = parseInt(timeValues[id], 10);
+        this.setState({ presetMinute: parseInt(timeValues[id], 10) });
       }
+      // id is the index of the chosen item, or -1 if the user cancelled.
     });
-    Alert.alert('Button has been pressed!');
   }
-  onPlayGongButtonPressed() {
-    if (this.state.isPlayGongButtonPressed) {
-      this.setState({ isPlayGongButtonPressed: true });
-    } else {
-      this.setState({ isPlayGongButtonPressed: true });
-      return (
-        <Video
-        source={require('./src/components/gong.mp3')}
-        repeat={false}
-        />
-      );
-    }
 
-    Alert.alert('You should hear the gong!');
+  onIntervalChange() {
+    const timeValues = [];
+    for (let i = 0; i < 60; i++) {
+      timeValues.push(i.toString());
+    }
+    NumberPickerDialog.show({
+      values: timeValues,
+      positiveButtonLabel: 'Ok',
+      negativeButtonLabel: 'Cancel',
+      value: intervalDurationMinute.toString(),
+      message: 'Durée des intervalles',
+      title: 'Combien de temps (minutes) entre chaque gong ?',
+    }).then((id) => {
+      if (id !== -1) {
+        intervalDurationMinute = parseInt(timeValues[id], 10);
+        this.setState({ intervalMinute: parseInt(timeValues[id], 10) });
+      }
+      // id is the index of the chosen item, or -1 if the user cancelled.
+    });
   }
+
   getDurationTitle() {
       return `Durée : ${this.totalDurationMinute} min `;
   }
@@ -130,57 +164,61 @@ this.onMeditStart = this.onMeditStart.bind(this);
       console.warn(`Error in example '${stateKey}': `, message);
     }
   }
+  //<Text>{this.state.totalDurationText} text</Text>
+  //<Text>{this.state.totalDurationHour} hour</Text>
+  //<Text>{this.state.totalDurationMinute} minutes</Text>
+  //<Text>Interval: {this.state.intervalDurationMinute} minutes</Text>
   render() {
     return (
-      <View style={{ alignItems: 'center' }}>
-        <Greeting name='Rexxar' />
-        <Greeting name='Jaina' />
-          <Button
-          onPress={this.showPicker.bind(this, 'totalDuration', {
-            hour: this.state.presetHour,
-            minute: this.state.presetMinute,
-            is24Hour: true,
-          })}
-          title="Durée : 5 minutes"
-          color="#841584"
-          accessibilityLabel="Learn more about this purple button"
-          />
-          <Button
-          onPress={this.showPicker.bind(this, 'intervalDuration', {
-            hour: this.state.presetHour,
-            minute: this.state.presetMinute,
-            is24Hour: true,
-          })}
-          title="Durée d'intervalle"
-          color="#841584"
-          accessibilityLabel="Learn more about this purple button"
-          />
-        <Text>{this.state.totalDurationText} text</Text>
-        <Text>{this.state.totalDurationHour} hour</Text>
-        <Text>{this.state.totalDurationMinute} minutes</Text>
-        <Text>Interval: {this.state.intervalDurationMinute} minutes</Text>
+      <View
+        style={{
+      flex: 1,
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}>
+        <Header headerText={'Gong de méditation'} />
+        <View style={{ flex: 0.5, justifyContent: 'center' }}>
+        <Text
+          style={{
+            backgroundColor: '#808080',
+            textAlignVertical: 'center',
+            textAlign: 'center',
+            fontSize: 100,
+            color: '#fffafa',
+            width: 180,
+            height: 180,
+            borderRadius: 90,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            elevation: 2,
+            margin: 20
+          }}
+        >{this.state.presetMinute}</Text>
+      <Button
+        onPress={this.onButtonPress2}
+        title="Changer la durée"
+      />
+      <Button
+        onPress={this.onMeditStart}
+        title="Démarrer"
+        color="#841584"
+        style={{ width: 180, margin: 20, padding: 30 }}
+        accessibilityLabel="Learn more about this purple button"
+      />
+      </View>
+      <View style={{ flex: 0.1 }}>
         <Button
-    onPress={this.onMeditStart}
-    title="Lancer"
-    color="#841584"
-    accessibilityLabel="Learn more about this purple button"
+          onPress={this.onIntervalChange}
+          title="Changer l'intervalle"
+          style={{ width: 360 }}
+          color="#841584"
+          accessibilityLabel="Learn more about this purple button"
         />
-      <Greeting name='Valeera' />
-          <Button
-    onPress={this.onButtonPress}
-    title="Learn More"
-    color="#841584"
-    accessibilityLabel="Learn more about this purple button"
-          />
-        {renderIf(this.state.isFirstButtonPressed,
-            <Button
-      onPress={this.onPlayGongButtonPressed}
-      title="Play GONG"
-      color="#841584"
-      accessibilityLabel="Learn more about this purple button"
-            />
-        )}
-    </View>
+      </View>
+      <Text>Intervalle: {this.state.intervalMinute} minutes</Text>
+      </View>
     );
   }
 }
@@ -191,4 +229,5 @@ this.onMeditStart = this.onMeditStart.bind(this);
 function formatTime(hour, minute) {
   return hour + ':' + (minute < 10 ? '0' + minute : minute);
 }
+
 AppRegistry.registerComponent('medit', () => HelloWorldApp);
