@@ -13,7 +13,15 @@ const Sound = require('react-native-sound');
 const Timer = require('react-native-timer');
 
 const preparationTimeInSecond = 5;
-const gongSound = new Sound('chime.mp3', Sound.MAIN_BUNDLE, (error) => {
+const gongSound = new Sound('bell10s.ogg', Sound.MAIN_BUNDLE, (error) => {
+  if (error) {
+    console.log('failed to load the sound', error);
+    return;
+  }
+  // loaded successfully
+  console.log('duration in seconds: ' + gongSound.getDuration() + 'number of channels: ' + gongSound.getNumberOfChannels());
+});
+const finalGongSound = new Sound('final_gong.ogg', Sound.MAIN_BUNDLE, (error) => {
   if (error) {
     console.log('failed to load the sound', error);
     return;
@@ -23,7 +31,7 @@ const gongSound = new Sound('chime.mp3', Sound.MAIN_BUNDLE, (error) => {
 });
 
 let minutes = 5;
-let intervalDurationMinute = 1;
+let intervalDurationMinute = 0;
 
 class HelloWorldApp extends Component {
   constructor(props) {
@@ -32,7 +40,8 @@ class HelloWorldApp extends Component {
     this.onPreparationEnd = this.onPreparationEnd.bind(this);
     this.onMeditationEnd = this.onMeditationEnd.bind(this);
     this.onMeditStart = this.onMeditStart.bind(this);
-    this.onButtonPress2 = this.onButtonPress2.bind(this);
+    this.onOneMinutePassed = this.onOneMinutePassed.bind(this);
+    this.onDurationChange = this.onDurationChange.bind(this);
     this.onIntervalChange = this.onIntervalChange.bind(this);
     this.getDurationTitle = this.getDurationTitle.bind(this);
     this.state = {
@@ -62,20 +71,28 @@ class HelloWorldApp extends Component {
     gongSound.play();
   }
 
+  onOneMinutePassed() {
+    if (this.state.isMeditating) {
+      this.setState({ presetMinute: this.state.presetMinute - 1 });
+    } else {
+      Timer.clearInterval(this, 'decreaseTotalDuration');
+    }
+  }
+
   onMeditationEnd() {
-    gongSound.setNumberOfLoops(0);
-    gongSound.play((success) => {
-      gongSound.play((success) => {
-        gongSound.play((success) => {
-          gongSound.stop();
-          gongSound.release();
-          Alert.alert('MeditEnd');
-          Timer.clearTimeout(this);
-        });
+    finalGongSound.setNumberOfLoops(0);
+    finalGongSound.play((success) => {
+      finalGongSound.stop();
+      finalGongSound.release();
+      Alert.alert('Fin de la séance = Avec conscience vous pouvez maintenant retourner à vos activités.');
+      Timer.clearTimeout(this);
+      this.setState({
+        isMeditating: false,
+        presetMinute: minutes
       });
     });
-    this.setState({ isMeditating: false });
   }
+
   onPreparationEnd() {
     gongSound.play();
     Timer.setTimeout(
@@ -93,16 +110,23 @@ class HelloWorldApp extends Component {
       // preparation time
       preparationTimeInSecond * 1000)
     );
-
+    if (intervalDurationMinute > 0) {
+      Timer.setInterval(
+        this,
+        'endIntervalWithOneGong',
+        this.onMeditationIntervalEnd,
+        intervalDurationMinute * 60 * 1000
+      );
+    }
     Timer.setInterval(
       this,
-      'endIntervalWithOneGong',
-      this.onMeditationIntervalEnd,
-      intervalDurationMinute * 60 * 1000
+      'decreaseTotalDuration',
+      this.onOneMinutePassed,
+      60000
     );
   }
 
-  onButtonPress2() {
+  onDurationChange() {
     const timeValues = [];
     for (let i = 0; i < 60; i++) {
       timeValues.push(i.toString());
@@ -169,9 +193,14 @@ class HelloWorldApp extends Component {
   //<Text>{this.state.totalDurationMinute} minutes</Text>
   //<Text>Interval: {this.state.intervalDurationMinute} minutes</Text>
   render() {
+    let meditationText = null;
+    if (this.state.isMeditating) {
+      meditationText = <Text style={{ textAlign: 'center', fontSize: 20, color: '#FFF', fontWeight: 'bold' }}>Méditation en cours</Text>;
+    }
     return (
       <View
         style={{
+      backgroundColor: '#696969',
       flex: 1,
       flexDirection: 'column',
       justifyContent: 'space-between',
@@ -196,8 +225,9 @@ class HelloWorldApp extends Component {
             margin: 20
           }}
         >{this.state.presetMinute}</Text>
+      {meditationText}
       <Button
-        onPress={this.onButtonPress2}
+        onPress={this.onDurationChange}
         title="Changer la durée"
       />
       <Button
