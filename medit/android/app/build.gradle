@@ -126,7 +126,6 @@ android {
 }
 
 dependencies {
-    compile project(':react-native-numberpicker-dialog')
     compile project(':react-native-sound')
     compile project(':react-native-numberpicker')
     compile fileTree(dir: "libs", include: ["*.jar"])

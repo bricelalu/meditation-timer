@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import {
   AppRegistry,
-  TimePickerAndroid,
   Text,
   View,
   Alert,
@@ -33,11 +32,12 @@ const finalGongSound = new Sound('final_gong.ogg', Sound.MAIN_BUNDLE, (error) =>
 let minutes = 5;
 let intervalDurationMinute = 0;
 
-class HelloWorldApp extends Component {
+class MeditationApp extends Component {
   constructor(props) {
     super(props);
     this.onMeditationIntervalEnd = this.onMeditationIntervalEnd.bind(this);
     this.onPreparationEnd = this.onPreparationEnd.bind(this);
+    this.onCancelMeditation = this.onCancelMeditation.bind(this);
     this.onMeditationEnd = this.onMeditationEnd.bind(this);
     this.onMeditStart = this.onMeditStart.bind(this);
     this.onOneMinutePassed = this.onOneMinutePassed.bind(this);
@@ -79,12 +79,20 @@ class HelloWorldApp extends Component {
     }
   }
 
+  onCancelMeditation() {
+    Timer.clearTimeout(this);
+    this.setState({
+      isMeditating: false,
+      presetMinute: minutes
+    });
+  }
+
   onMeditationEnd() {
     finalGongSound.setNumberOfLoops(0);
     finalGongSound.play((success) => {
       finalGongSound.stop();
       finalGongSound.release();
-      Alert.alert('Fin de la séance = Avec conscience vous pouvez maintenant retourner à vos activités.');
+      Alert.alert('Fin de la séance = Avec conscience vous pouvez vous lever.');
       Timer.clearTimeout(this);
       this.setState({
         isMeditating: false,
@@ -134,7 +142,7 @@ class HelloWorldApp extends Component {
     NumberPickerDialog.show({
       values: timeValues,
       positiveButtonLabel: 'Ok',
-      negativeButtonLabel: 'Cancel',
+      negativeButtonLabel: 'Annuler',
       value: minutes.toString(),
       message: 'Durée de la séance',
       title: 'Combien de temps (minutes) allez vous pratiquer ?',
@@ -155,7 +163,7 @@ class HelloWorldApp extends Component {
     NumberPickerDialog.show({
       values: timeValues,
       positiveButtonLabel: 'Ok',
-      negativeButtonLabel: 'Cancel',
+      negativeButtonLabel: 'Annuler',
       value: intervalDurationMinute.toString(),
       message: 'Durée des intervalles',
       title: 'Combien de temps (minutes) entre chaque gong ?',
@@ -171,31 +179,31 @@ class HelloWorldApp extends Component {
   getDurationTitle() {
       return `Durée : ${this.totalDurationMinute} min `;
   }
-  showPicker = async (stateKey, options) => {
-    try {
-      const { action, minute, hour } = await TimePickerAndroid.open(options);
-      var newState = {};
-      if (action === TimePickerAndroid.timeSetAction) {
-        newState[stateKey + 'Text'] = formatTime(hour, minute);
-        newState[stateKey + 'Hour'] = hour;
-        newState[stateKey + 'Minute'] = minute;
-      } else if (action === TimePickerAndroid.dismissedAction) {
-        newState[stateKey + 'Text'] = 'dismissed';
-      }
-      console.warn(newState);
-      this.setState(newState);
-    } catch ({ code, message }) {
-      console.warn(`Error in example '${stateKey}': `, message);
-    }
-  }
-  //<Text>{this.state.totalDurationText} text</Text>
-  //<Text>{this.state.totalDurationHour} hour</Text>
-  //<Text>{this.state.totalDurationMinute} minutes</Text>
-  //<Text>Interval: {this.state.intervalDurationMinute} minutes</Text>
   render() {
     let meditationText = null;
+    let displayButtons = null;
     if (this.state.isMeditating) {
       meditationText = <Text style={{ textAlign: 'center', fontSize: 20, color: '#FFF', fontWeight: 'bold' }}>Méditation en cours</Text>;
+      displayButtons = (
+        <View>
+          <Button
+            onPress={this.onCancelMeditation}
+            title="Annuler"
+          />
+      </View>);
+    } else {
+      displayButtons = (
+      <View>
+      <Button
+        onPress={this.onDurationChange}
+        title="Changer la durée"
+      />
+      <Button
+        onPress={this.onMeditStart}
+        title="Démarrer"
+        color="#841584"
+        style={{ width: 180, margin: 20, padding: 30 }}
+      /></View>);
     }
     return (
       <View
@@ -226,17 +234,7 @@ class HelloWorldApp extends Component {
           }}
         >{this.state.presetMinute}</Text>
       {meditationText}
-      <Button
-        onPress={this.onDurationChange}
-        title="Changer la durée"
-      />
-      <Button
-        onPress={this.onMeditStart}
-        title="Démarrer"
-        color="#841584"
-        style={{ width: 180, margin: 20, padding: 30 }}
-        accessibilityLabel="Learn more about this purple button"
-      />
+      {displayButtons}
       </View>
       <View style={{ flex: 0.1 }}>
         <Button
@@ -247,17 +245,10 @@ class HelloWorldApp extends Component {
           accessibilityLabel="Learn more about this purple button"
         />
       </View>
-      <Text>Intervalle: {this.state.intervalMinute} minutes</Text>
+      <Text>Intervalle: {this.state.intervalMinute} minute(s)</Text>
       </View>
     );
   }
 }
 
-/**
- * Returns e.g. '3:05'.
- */
-function formatTime(hour, minute) {
-  return hour + ':' + (minute < 10 ? '0' + minute : minute);
-}
-
-AppRegistry.registerComponent('medit', () => HelloWorldApp);
+AppRegistry.registerComponent('medit', () => MeditationApp);
