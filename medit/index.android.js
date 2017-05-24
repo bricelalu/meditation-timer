@@ -32,6 +32,7 @@ const finalGongSound = new Sound('final_gong.ogg', Sound.MAIN_BUNDLE, (error) =>
 
 let minutes = 5;
 let intervalDurationMinute = 0;
+const timeValues = [];
 
 class MeditationApp extends Component {
   constructor(props) {
@@ -45,6 +46,8 @@ class MeditationApp extends Component {
     this.onDurationChange = this.onDurationChange.bind(this);
     this.onIntervalChange = this.onIntervalChange.bind(this);
     this.getDurationTitle = this.getDurationTitle.bind(this);
+    this.handleDurationValueChange = this.handleDurationValueChange.bind(this);
+    this.handleIntervalValueChange = this.handleIntervalValueChange.bind(this);
     this.state = {
       isMeditating: false,
       isFirstButtonPressed: false,
@@ -54,9 +57,8 @@ class MeditationApp extends Component {
       intervalMinute: intervalDurationMinute,
       totalDurationMinute: 5
     };
-    const timeValues = [];
     for (let i = 0; i < 60; i++) {
-      timeValues.push(i);
+      timeValues.push(i.toString());
     }
     this.state.timeValues = timeValues;
   }
@@ -111,6 +113,7 @@ class MeditationApp extends Component {
       minutes * 60 * 1000
     );
   }
+
   onMeditStart() {
     this.setState({ isMeditating: true }, () => Timer.setTimeout(
       this,
@@ -135,11 +138,14 @@ class MeditationApp extends Component {
     );
   }
 
-  onDurationChange() {
-    const timeValues = [];
-    for (let i = 0; i < 60; i++) {
-      timeValues.push(i.toString());
+  handleDurationValueChange(id) {
+    if (id !== -1) {
+      minutes = parseInt(timeValues[id], 10);
+      this.setState({ presetMinute: parseInt(timeValues[id], 10) });
     }
+  }
+
+  onDurationChange() {
     NumberPickerDialog.show({
       values: timeValues,
       positiveButtonLabel: 'Ok',
@@ -147,20 +153,17 @@ class MeditationApp extends Component {
       value: minutes.toString(),
       message: 'Durée de la séance',
       title: 'Combien de temps (minutes) allez vous pratiquer ?',
-    }).then((id) => {
-      if (id !== -1) {
-        minutes = parseInt(timeValues[id], 10);
-        this.setState({ presetMinute: parseInt(timeValues[id], 10) });
-      }
-      // id is the index of the chosen item, or -1 if the user cancelled.
-    });
+    }, this.handleDurationValueChange, this.handleDurationValueChange);
+  }
+
+  handleIntervalValueChange(id) {
+    if (id !== -1) {
+      intervalDurationMinute = parseInt(timeValues[id], 10);
+      this.setState({ intervalMinute: parseInt(timeValues[id], 10) });
+    }
   }
 
   onIntervalChange() {
-    const timeValues = [];
-    for (let i = 0; i < 60; i++) {
-      timeValues.push(i.toString());
-    }
     NumberPickerDialog.show({
       values: timeValues,
       positiveButtonLabel: 'Ok',
@@ -168,13 +171,7 @@ class MeditationApp extends Component {
       value: intervalDurationMinute.toString(),
       message: 'Durée des intervalles',
       title: 'Combien de temps (minutes) entre chaque gong ?',
-    }).then((id) => {
-      if (id !== -1) {
-        intervalDurationMinute = parseInt(timeValues[id], 10);
-        this.setState({ intervalMinute: parseInt(timeValues[id], 10) });
-      }
-      // id is the index of the chosen item, or -1 if the user cancelled.
-    });
+    }, this.handleIntervalValueChange, this.handleIntervalValueChange);
   }
 
   getDurationTitle() {
