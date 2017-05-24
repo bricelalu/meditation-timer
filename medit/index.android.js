@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import {
+  NativeModules,
   AppRegistry,
   Text,
   View,
   Alert,
   Button } from 'react-native';
-import NumberPickerDialog from 'react-native-numberpicker-dialog';
 import Header from './src/components/header';
 
+const NumberPickerDialog = NativeModules.RNNumberPickerDialog;
 const Sound = require('react-native-sound');
 const Timer = require('react-native-timer');
 

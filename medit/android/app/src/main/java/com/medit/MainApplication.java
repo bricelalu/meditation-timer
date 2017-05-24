@@ -5,7 +5,6 @@ import android.app.Application;
 import com.facebook.react.ReactApplication;
 import fr.bamlab.reactnativenumberpickerdialog.RNNumberPickerDialogPackage;
 import com.zmxv.RNSound.RNSoundPackage;
-import io.fixd.reactnativenumberpicker.RNNumberPickerPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.shell.MainReactPackage;
@@ -25,9 +24,8 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
-            new RNNumberPickerDialogPackage(),
-          new RNSoundPackage(),
-          new RNNumberPickerPackage()
+          new RNNumberPickerDialogPackage(),
+          new RNSoundPackage()
       );
     }
   };
