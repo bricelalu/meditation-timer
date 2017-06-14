@@ -6,6 +6,7 @@ import {
   View,
   Alert,
   Button } from 'react-native';
+import AlarmAndroid from 'react-native-alarms';
 import Header from './src/components/header';
 
 const NumberPickerDialog = NativeModules.RNNumberPickerDialog;
@@ -63,13 +64,10 @@ class MeditationApp extends Component {
     this.state.timeValues = timeValues;
   }
 
-  onMeditLengthChoose() {
-    Alert.alert('MeditLengthChoose');
-  }
-
   onMeditationIntervalEnd() {
     if (!this.state.isMeditating) {
-      Timer.clearInterval(this, 'endIntervalWithOneGong');
+      AlarmAndroid.clearAlarm('endIntervalWithOneGong');
+      //Timer.clearInterval(this, 'endIntervalWithOneGong');
     }
     gongSound.play();
   }
@@ -78,7 +76,8 @@ class MeditationApp extends Component {
     if (this.state.isMeditating) {
       this.setState({ presetMinute: this.state.presetMinute - 1 });
     } else {
-      Timer.clearInterval(this, 'decreaseTotalDuration');
+      AlarmAndroid.clearAlarm('decreaseTotalDuration');
+      //Timer.clearInterval(this, 'decreaseTotalDuration');
     }
   }
 
@@ -96,7 +95,11 @@ class MeditationApp extends Component {
       finalGongSound.stop();
       finalGongSound.release();
       Alert.alert('Fin de la séance = Avec conscience vous pouvez vous lever.');
-      Timer.clearTimeout(this);
+      //Timer.clearTimeout(this);
+      AlarmAndroid.clearAlarm('endMeditationWithMultipleGongs');
+      AlarmAndroid.clearAlarm('startMeditationPreparation');
+      AlarmAndroid.clearAlarm('endIntervalWithOneGong');
+      AlarmAndroid.clearAlarm('decreaseTotalDuration');
       this.setState({
         isMeditating: false,
         presetMinute: minutes
@@ -106,36 +109,74 @@ class MeditationApp extends Component {
 
   onPreparationEnd() {
     gongSound.play();
-    Timer.setTimeout(
+    // create alarm
+    AlarmAndroid.alarmSetElapsedRealtimeWakeup(
+      'endMeditationWithMultipleGongs',
+      // preparation time
+      minutes * 60 * 1000
+    );
+    // add the listener
+    AlarmAndroid.AlarmEmitter.addListener(
+      'endMeditationWithMultipleGongs',
+      this.onMeditationEnd
+    );
+    /*Timer.setTimeout(
       this,
       'endMeditationWithMultipleGongs',
       this.onMeditationEnd,
       minutes * 60 * 1000
-    );
+    );*/
   }
 
   onMeditStart() {
-    this.setState({ isMeditating: true }, () => Timer.setTimeout(
-      this,
+    this.setState({ isMeditating: true });
+    // create alarm
+    AlarmAndroid.alarmSetElapsedRealtimeWakeup(
       'startMeditationPreparation',
-      this.onPreparationEnd,
       // preparation time
-      preparationTimeInSecond * 1000)
+      preparationTimeInSecond * 1000
+    );
+    // add the listener
+    AlarmAndroid.AlarmEmitter.addListener(
+      'startMeditationPreparation',
+      this.onPreparationEnd
     );
     if (intervalDurationMinute > 0) {
-      Timer.setInterval(
+      // create alarm gong interval
+      AlarmAndroid.alarmSetElapsedRealtimeWakeup(
+        'endIntervalWithOneGong',
+        // preparation time
+        intervalDurationMinute * 60 * 1000,
+        intervalDurationMinute * 60 * 1000
+      );
+      /*Timer.setInterval(
         this,
         'endIntervalWithOneGong',
         this.onMeditationIntervalEnd,
         intervalDurationMinute * 60 * 1000
+      );*/
+      // create listener for gong interval
+      AlarmAndroid.AlarmEmitter.addListener(
+        'endIntervalWithOneGong',
+        this.onMeditationIntervalEnd
       );
     }
-    Timer.setInterval(
+    AlarmAndroid.alarmSetElapsedRealtime(
+      'decreaseTotalDuration',
+      // preparation time
+      60000,
+      60000
+    );
+    AlarmAndroid.AlarmEmitter.addListener(
+      'decreaseTotalDuration',
+      this.onOneMinutePassed
+    );
+    /*Timer.setInterval(
       this,
       'decreaseTotalDuration',
       this.onOneMinutePassed,
       60000
-    );
+    );*/
   }
 
   handleDurationValueChange(id) {

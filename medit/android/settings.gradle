@@ -1,7 +1,7 @@
 rootProject.name = 'medit'
+include ':react-native-alarms'
+project(':react-native-alarms').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-alarms/android')
 include ':react-native-sound'
 project(':react-native-sound').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sound/android')
-include ':react-native-numberpicker', ':app'
-project(':react-native-numberpicker').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-numberpicker')
 
 include ':app'

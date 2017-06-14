@@ -16,6 +16,7 @@
       android:label="@string/app_name"
       android:icon="@mipmap/ic_launcher"
       android:theme="@style/AppTheme">
+      <receiver android:name="com.ioddly.alarms.AlarmRun" android:enabled="true"></receiver>
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
