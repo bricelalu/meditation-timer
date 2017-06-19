@@ -11,7 +11,6 @@ import Header from './src/components/header';
 
 const NumberPickerDialog = NativeModules.RNNumberPickerDialog;
 const Sound = require('react-native-sound');
-const Timer = require('react-native-timer');
 
 const preparationTimeInSecond = 5;
 const gongSound = new Sound('bell10s.ogg', Sound.MAIN_BUNDLE, (error) => {
@@ -40,6 +39,7 @@ class MeditationApp extends Component {
     super(props);
     this.onMeditationIntervalEnd = this.onMeditationIntervalEnd.bind(this);
     this.onPreparationEnd = this.onPreparationEnd.bind(this);
+    this.deleteAlarms = this.deleteAlarms.bind(this);
     this.onCancelMeditation = this.onCancelMeditation.bind(this);
     this.onMeditationEnd = this.onMeditationEnd.bind(this);
     this.onMeditStart = this.onMeditStart.bind(this);
@@ -65,8 +65,8 @@ class MeditationApp extends Component {
   }
 
   onMeditationIntervalEnd() {
-    if (!this.state.isMeditating) {
-      AlarmAndroid.clearAlarm('endIntervalWithOneGong');
+    if (!this.state.isMeditating || this.state.presetMinute === 0) {
+      this.deleteAlarms();
     }
     gongSound.play();
   }
@@ -75,12 +75,12 @@ class MeditationApp extends Component {
     if (this.state.isMeditating) {
       this.setState({ presetMinute: this.state.presetMinute - 1 });
     } else {
-      AlarmAndroid.clearAlarm('decreaseTotalDuration');
+      this.deleteAlarms();
     }
   }
 
   onCancelMeditation() {
-    Timer.clearTimeout(this);
+    this.deleteAlarms();
     this.setState({
       isMeditating: false,
       presetMinute: minutes
@@ -94,10 +94,7 @@ class MeditationApp extends Component {
       finalGongSound.release();
       Alert.alert('Fin de la séance = Avec conscience vous pouvez vous lever.');
 
-      AlarmAndroid.clearAlarm('endMeditationWithMultipleGongs');
-      AlarmAndroid.clearAlarm('startMeditationPreparation');
-      AlarmAndroid.clearAlarm('endIntervalWithOneGong');
-      AlarmAndroid.clearAlarm('decreaseTotalDuration');
+      this.deleteAlarms();
       this.setState({
         isMeditating: false,
         presetMinute: minutes
@@ -152,7 +149,7 @@ class MeditationApp extends Component {
       );
     }
     // STEP 4: Decrease Total Duration
-    AlarmAndroid.alarmSetElapsedRealtime(
+    AlarmAndroid.alarmSetElapsedRealtimeWakeup(
       'decreaseTotalDuration',
       // preparation time
       60000,
@@ -164,13 +161,6 @@ class MeditationApp extends Component {
     );
   }
 
-  handleDurationValueChange(id) {
-    if (id !== -1) {
-      minutes = parseInt(timeValues[id], 10);
-      this.setState({ presetMinute: parseInt(timeValues[id], 10) });
-    }
-  }
-
   onDurationChange() {
     NumberPickerDialog.show({
       values: timeValues,
@@ -180,13 +170,6 @@ class MeditationApp extends Component {
       message: 'Durée de la séance',
       title: 'Combien de temps (minutes) allez vous pratiquer ?',
     }, this.handleDurationValueChange, this.handleDurationValueChange);
-  }
-
-  handleIntervalValueChange(id) {
-    if (id !== -1) {
-      intervalDurationMinute = parseInt(timeValues[id], 10);
-      this.setState({ intervalMinute: parseInt(timeValues[id], 10) });
-    }
   }
 
   onIntervalChange() {
@@ -203,6 +186,28 @@ class MeditationApp extends Component {
   getDurationTitle() {
       return `Durée : ${this.totalDurationMinute} min `;
   }
+
+  deleteAlarms() {
+    AlarmAndroid.clearAlarm('endMeditationWithMultipleGongs');
+    AlarmAndroid.clearAlarm('startMeditationPreparation');
+    AlarmAndroid.clearAlarm('endIntervalWithOneGong');
+    AlarmAndroid.clearAlarm('decreaseTotalDuration');
+  }
+
+  handleDurationValueChange(id) {
+    if (id !== -1) {
+      minutes = parseInt(timeValues[id], 10);
+      this.setState({ presetMinute: parseInt(timeValues[id], 10) });
+    }
+  }
+
+  handleIntervalValueChange(id) {
+    if (id !== -1) {
+      intervalDurationMinute = parseInt(timeValues[id], 10);
+      this.setState({ intervalMinute: parseInt(timeValues[id], 10) });
+    }
+  }
+
   render() {
     let meditationText = null;
     let displayButtons = null;
