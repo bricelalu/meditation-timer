@@ -51,6 +51,7 @@ class MeditationApp extends Component {
     this.handleIntervalValueChange = this.handleIntervalValueChange.bind(this);
     this.state = {
       isMeditating: false,
+      hasFinalGonged: true,
       isFirstButtonPressed: false,
       isPlayGongButtonPressed: false,
       presetHour: 0,
@@ -65,7 +66,7 @@ class MeditationApp extends Component {
   }
 
   onMeditationIntervalEnd() {
-    if (!this.state.isMeditating || this.state.presetMinute === 0) {
+    if (this.state.hasFinalGonged) {
       this.deleteAlarms();
     }
     gongSound.play();
@@ -74,7 +75,7 @@ class MeditationApp extends Component {
   onOneMinutePassed() {
     if (this.state.isMeditating) {
       this.setState({ presetMinute: this.state.presetMinute - 1 });
-    } else {
+    } else if (this.state.hasFinalGonged) {
       this.deleteAlarms();
     }
   }
@@ -97,6 +98,7 @@ class MeditationApp extends Component {
       this.deleteAlarms();
       this.setState({
         isMeditating: false,
+        hasFinalGonged: true,
         presetMinute: minutes
       });
     });
@@ -107,7 +109,7 @@ class MeditationApp extends Component {
   }
 
   onMeditStart() {
-    this.setState({ isMeditating: true });
+    this.setState({ isMeditating: true, hasFinalGonged: false });
     // STEP 1: Create FINAL Alarm
     AlarmAndroid.alarmSetElapsedRealtimeWakeup(
       'endMeditationWithMultipleGongs',
