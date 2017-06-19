@@ -67,7 +67,6 @@ class MeditationApp extends Component {
   onMeditationIntervalEnd() {
     if (!this.state.isMeditating) {
       AlarmAndroid.clearAlarm('endIntervalWithOneGong');
-      //Timer.clearInterval(this, 'endIntervalWithOneGong');
     }
     gongSound.play();
   }
@@ -77,7 +76,6 @@ class MeditationApp extends Component {
       this.setState({ presetMinute: this.state.presetMinute - 1 });
     } else {
       AlarmAndroid.clearAlarm('decreaseTotalDuration');
-      //Timer.clearInterval(this, 'decreaseTotalDuration');
     }
   }
 
@@ -95,7 +93,7 @@ class MeditationApp extends Component {
       finalGongSound.stop();
       finalGongSound.release();
       Alert.alert('Fin de la séance = Avec conscience vous pouvez vous lever.');
-      //Timer.clearTimeout(this);
+
       AlarmAndroid.clearAlarm('endMeditationWithMultipleGongs');
       AlarmAndroid.clearAlarm('startMeditationPreparation');
       AlarmAndroid.clearAlarm('endIntervalWithOneGong');
@@ -109,7 +107,11 @@ class MeditationApp extends Component {
 
   onPreparationEnd() {
     gongSound.play();
-    // create alarm
+  }
+
+  onMeditStart() {
+    this.setState({ isMeditating: true });
+    // STEP 1: Create FINAL Alarm
     AlarmAndroid.alarmSetElapsedRealtimeWakeup(
       'endMeditationWithMultipleGongs',
       // preparation time
@@ -120,16 +122,8 @@ class MeditationApp extends Component {
       'endMeditationWithMultipleGongs',
       this.onMeditationEnd
     );
-    /*Timer.setTimeout(
-      this,
-      'endMeditationWithMultipleGongs',
-      this.onMeditationEnd,
-      minutes * 60 * 1000
-    );*/
-  }
 
-  onMeditStart() {
-    this.setState({ isMeditating: true });
+    // STEP 2: Create Preparation Alarm
     // create alarm
     AlarmAndroid.alarmSetElapsedRealtimeWakeup(
       'startMeditationPreparation',
@@ -141,6 +135,8 @@ class MeditationApp extends Component {
       'startMeditationPreparation',
       this.onPreparationEnd
     );
+
+    // STEP 3: Create Interval Alarm
     if (intervalDurationMinute > 0) {
       // create alarm gong interval
       AlarmAndroid.alarmSetElapsedRealtimeWakeup(
@@ -149,18 +145,13 @@ class MeditationApp extends Component {
         intervalDurationMinute * 60 * 1000,
         intervalDurationMinute * 60 * 1000
       );
-      /*Timer.setInterval(
-        this,
-        'endIntervalWithOneGong',
-        this.onMeditationIntervalEnd,
-        intervalDurationMinute * 60 * 1000
-      );*/
       // create listener for gong interval
       AlarmAndroid.AlarmEmitter.addListener(
         'endIntervalWithOneGong',
         this.onMeditationIntervalEnd
       );
     }
+    // STEP 4: Decrease Total Duration
     AlarmAndroid.alarmSetElapsedRealtime(
       'decreaseTotalDuration',
       // preparation time
@@ -171,12 +162,6 @@ class MeditationApp extends Component {
       'decreaseTotalDuration',
       this.onOneMinutePassed
     );
-    /*Timer.setInterval(
-      this,
-      'decreaseTotalDuration',
-      this.onOneMinutePassed,
-      60000
-    );*/
   }
 
   handleDurationValueChange(id) {
